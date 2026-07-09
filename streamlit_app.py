@@ -40,9 +40,15 @@ if st.button("Nyalakan Radar Jembatan AI"):
         st.success("Radar Jembatan Aktif! Memantau awan Scratch MIT...")
         
         # Koneksi Resmi via Python
-        session = scratch3.Session(SESSION_ID, username="F4al-Pr0duct1on")
-        conn = session.connect_cloud(PROJECT_ID)
-        
+       # --- KODE BARU YANG SUDAH DIPERBAIKI ---
+        try:
+            # Di versi baru, cukup masukkan Session ID saja
+            session = scratch3.Session(SESSION_ID)
+            
+            # Server akan otomatis membaca username dari Session ID tersebut
+            conn = session.connect_cloud(PROJECT_ID)
+        except Exception as e:
+            st.error(f"Gagal login ke Scratch! Periksa apakah Session ID kamu sudah kedaluwarsa: {e}")
         # Konfigurasi Gemini
         genai.configure(api_key=GEMINI_KEY)
         model = genai.GenerativeModel('gemini-1.5-flash')
