@@ -4,8 +4,8 @@ import google.generativeai as genai
 import time
 
 # --- KONFIGURASI DASHBOARD (Navy Blue Style) ---
-st.set_page_config(page_title="Scratch AI Bridge v8.1", layout="centered")
-st.title("🚀 AI Bridge Dashboard (Status 2 Detector)")
+st.set_page_config(page_title="Scratch AI Bridge v8.2", layout="centered")
+st.title("🚀 AI Bridge Dashboard (Anti-Crash Mode)")
 
 GEMINI_KEY = st.text_input("Gemini API Key", type="password")
 PROJECT_ID = "1338403041"
@@ -26,58 +26,48 @@ if st.button("Jalankan Radar Pemantau Publik"):
     if not GEMINI_KEY:
         st.error("API Key Gemini wajib diisi, bro!")
     else:
-        st.success("Radar Aktif! Memantau sinyal dari game Scratch...")
+        st.success("Radar Aktif! Memantau sinyal tanpa membebani server...")
         
         # Konfigurasi Gemini
         genai.configure(api_key=GEMINI_KEY)
         model = genai.GenerativeModel('gemini-1.5-flash')
         
         st.info("Menunggu game Scratch mengirimkan Status = 2...")
-        
-        # Variabel pengunci agar tidak memproses pertanyaan yang sama berulang-ulang
         terakhir_diproses = ""
         
         while True:
             try:
-                # Ambil data log aktivitas cloud terbaru (5 aktivitas terakhir)
-                data_cloud = scratch3.get_cloud_logs(PROJECT_ID, limit=5)
+                # FIX BUG: Perkecil limit menjadi 2 agar paket data sangat ringan
+                data_cloud = scratch3.get_cloud_logs(PROJECT_ID, limit=2)
                 
                 status_terdeteksi = False
                 nilai_cloud_ask = ""
                 
-                # Scan log untuk memeriksa kondisi Status dan CloudAsk
                 for log in data_cloud:
                     if log['name'] == "☁ Status" and str(log['value']) == "2":
                         status_terdeteksi = True
                     if log['name'] == "☁ CloudAsk":
                         nilai_cloud_ask = str(log['value'])
                 
-                # JIKA GAME KAMU SUDAH MENGIRIM STATUS = 2
                 if status_terdeteksi and nilai_cloud_ask and nilai_cloud_ask != "0" and nilai_cloud_ask != terakhir_diproses:
                     terakhir_diproses = nilai_cloud_ask
                     
-                    st.write("🎯 **Sinyal Diterima! Game mendeteksi pertanyaan baru (Status = 2).**")
-                    st.write(f"📥 **Tertangkap Angka:** `{nilai_cloud_ask}`")
-                    
-                    # Terjemahkan angka menjadi teks
+                    st.write("🎯 **Sinyal Diterima! Menghubungi Gemini AI...**")
                     pertanyaan = dekripsi(nilai_cloud_ask)
-                    st.write(f"💬 **Teks Pertanyaan:** \"{pertanyaan}\"")
+                    st.write(f"💬 **Pertanyaan:** \"{pertanyaan}\"")
                     
-                    # Panggil Gemini AI
-                    st.write("⚡ *Menghubungi Gemini...*")
                     response = model.generate_content(
                         f"Kamu adalah AI proyek Scratch. Jawab singkat maksimal 25 karakter: {pertanyaan}"
                     )
                     jawaban_ai = response.text.strip()
                     
-                    # TAMPILKAN HASILNYA SECARA JELAS DI LAYAR
                     st.markdown("---")
                     st.subheader(f"🤖 JAWABAN GEMINI:")
                     st.success(f"**{jawaban_ai}**")
                     st.markdown("---")
                     
             except Exception as e:
-                # Abaikan eror koneksi kecil agar loop tidak patah
                 pass
                 
-            time.sleep(2) # Beri jeda 2 detik sebelum scan ulang log agar tidak dinilai spam oleh MIT
+            # FIX BUG: Naikkan jeda waktu tidur menjadi 5 detik agar tidak memicu proteksi auto-stop MIT
+            time.sleep(5)
