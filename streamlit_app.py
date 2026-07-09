@@ -4,8 +4,8 @@ import google.generativeai as genai
 import time
 
 # --- KONFIGURASI DASHBOARD (Navy Blue Style) ---
-st.set_page_config(page_title="Scratch AI Bridge v8.2", layout="centered")
-st.title("🚀 AI Bridge Dashboard (Anti-Crash Mode)")
+st.set_page_config(page_title="Scratch AI Bridge v8.3", layout="centered")
+st.title("🚀 AI Bridge Dashboard (Live Scanner)")
 
 GEMINI_KEY = st.text_input("Gemini API Key", type="password")
 PROJECT_ID = "1338403041"
@@ -26,48 +26,45 @@ if st.button("Jalankan Radar Pemantau Publik"):
     if not GEMINI_KEY:
         st.error("API Key Gemini wajib diisi, bro!")
     else:
-        st.success("Radar Aktif! Memantau sinyal tanpa membebani server...")
+        st.success("Radar Aktif! Mengunci variabel live proyek...")
         
         # Konfigurasi Gemini
         genai.configure(api_key=GEMINI_KEY)
         model = genai.GenerativeModel('gemini-1.5-flash')
         
-        st.info("Menunggu game Scratch mengirimkan Status = 2...")
+        st.info("Menunggu sinyal Status = 2 dari Scratch...")
         terakhir_diproses = ""
         
         while True:
             try:
-                # FIX BUG: Perkecil limit menjadi 2 agar paket data sangat ringan
-                data_cloud = scratch3.get_cloud_logs(PROJECT_ID, limit=2)
+                # SOLUSI JITU: Langsung tembak nilai variabel aslinya secara live via API publik
+                # Ini sangat ringan, tidak bikin crash, dan instan!
+                nilai_status = str(scratch3.get_var(PROJECT_ID, "Status"))
                 
-                status_terdeteksi = False
-                nilai_cloud_ask = ""
-                
-                for log in data_cloud:
-                    if log['name'] == "☁ Status" and str(log['value']) == "2":
-                        status_terdeteksi = True
-                    if log['name'] == "☁ CloudAsk":
-                        nilai_cloud_ask = str(log['value'])
-                
-                if status_terdeteksi and nilai_cloud_ask and nilai_cloud_ask != "0" and nilai_cloud_ask != terakhir_diproses:
-                    terakhir_diproses = nilai_cloud_ask
+                # Jika terdeteksi game mengirimkan sinyal Status 2
+                if nilai_status == "2":
+                    nilai_cloud_ask = str(scratch3.get_var(PROJECT_ID, "CloudAsk"))
                     
-                    st.write("🎯 **Sinyal Diterima! Menghubungi Gemini AI...**")
-                    pertanyaan = dekripsi(nilai_cloud_ask)
-                    st.write(f"💬 **Pertanyaan:** \"{pertanyaan}\"")
-                    
-                    response = model.generate_content(
-                        f"Kamu adalah AI proyek Scratch. Jawab singkat maksimal 25 karakter: {pertanyaan}"
-                    )
-                    jawaban_ai = response.text.strip()
-                    
-                    st.markdown("---")
-                    st.subheader(f"🤖 JAWABAN GEMINI:")
-                    st.success(f"**{jawaban_ai}**")
-                    st.markdown("---")
-                    
+                    if nilai_cloud_ask and nilai_cloud_ask != "0" and nilai_cloud_ask != terakhir_diproses:
+                        terakhir_diproses = nilai_cloud_ask
+                        
+                        st.write("🎯 **Sinyal Terkunci! Status = 2 Terdeteksi.**")
+                        pertanyaan = dekripsi(nilai_cloud_ask)
+                        st.write(f"💬 **Pertanyaan Player:** \"{pertanyaan}\"")
+                        
+                        # Ambil jawaban dari Gemini
+                        response = model.generate_content(
+                            f"Kamu adalah AI proyek Scratch. Jawab singkat maksimal 25 karakter: {pertanyaan}"
+                        )
+                        jawaban_ai = response.text.strip()
+                        
+                        st.markdown("---")
+                        st.subheader(f"🤖 JAWABAN GEMINI:")
+                        st.success(f"**{jawaban_ai}**")
+                        st.markdown("---")
+                        
             except Exception as e:
                 pass
                 
-            # FIX BUG: Naikkan jeda waktu tidur menjadi 5 detik agar tidak memicu proteksi auto-stop MIT
-            time.sleep(5)
+            # Jeda 1.5 detik sangat aman untuk pembacaan live satu variabel tunggal
+            time.sleep(1.5)
