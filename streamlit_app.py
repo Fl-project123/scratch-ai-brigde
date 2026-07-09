@@ -4,15 +4,15 @@ import google.generativeai as genai
 import time
 
 # --- KONFIGURASI DASHBOARD (Navy Blue Style) ---
-st.set_page_config(page_title="Scratch AI Bridge v7.0", layout="centered")
-st.title("🚀 AI Bridge Dashboard (Python + Streamlit)")
+st.set_page_config(page_title="Scratch AI Bridge v7.1", layout="centered")
+st.title("🚀 AI Bridge Dashboard (Streamlit Cloud)")
 
 # Input di Dashboard Streamlit
 SESSION_ID = st.text_input("Scratch Session ID", type="password")
 GEMINI_KEY = st.text_input("Gemini API Key", type="password")
 PROJECT_ID = "1338403041"
 
-# Kamus 44 Karakter kamu
+# Kamus 64 Karakter kamu
 kamus = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","0","1","2","3","4","5","6","7","8","9","?"," ","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
 
 def dekripsi(data_angka):
@@ -37,56 +37,56 @@ if st.button("Nyalakan Radar Jembatan AI"):
     if not SESSION_ID or not GEMINI_KEY:
         st.error("Session ID dan Gemini Key wajib diisi, bro!")
     else:
-        st.success("Radar Jembatan Aktif! Memantau awan Scratch MIT...")
-        
-        # Koneksi Resmi via Python
-       # --- KODE BARU YANG SUDAH DIPERBAIKI ---
         try:
-            # Di versi baru, cukup masukkan Session ID saja
+            # Login versi terbaru yang valid
             session = scratch3.Session(SESSION_ID)
             
-            # Server akan otomatis membaca username dari Session ID tersebut
+            # Membuka koneksi cloud resmi via objek session
             conn = session.connect_cloud(PROJECT_ID)
+            st.success("Radar Jembatan Aktif! Memantau awan Scratch MIT...")
+            
+            # Konfigurasi Gemini
+            genai.configure(api_key=GEMINI_KEY)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            st.info("Menunggu pertanyaan dari dalam game Scratch...")
+            terakhir_diproses = ""
+            
+            # LOOP UTAMA
+            while True:
+                try:
+                    # CARA BARU AMBIL VARIABEL CLOUD (Lewat objek conn, bukan scratch3 langsung)
+                    # Kita gunakan fungsi bawaan proyek publik agar lebih aman
+                    proyek_publik = scratch3.get_project(PROJECT_ID)
+                    nilai_cloud_ask = proyek_publik.get_cloud_variable("CloudAsk")
+                    
+                    if nilai_cloud_ask and str(nilai_cloud_ask) != "0" and str(nilai_cloud_ask) != terakhir_diproses:
+                        terakhir_diproses = str(nilai_cloud_ask)
+                        
+                        st.write(f"📥 **Tertangkap data masuk:** `{nilai_cloud_ask}`")
+                        pertanyaan = dekripsi(str(nilai_cloud_ask))
+                        st.write(f"💬 **Pertanyaan Terjemahan:** \"{pertanyaan}\"")
+                        
+                        # Panggil Gemini
+                        response = model.generate_content(
+                            f"Kamu adalah AI proyek Scratch. Jawab singkat maksimal 25 karakter: {pertanyaan}"
+                        )
+                        jawaban_ai = response.text.strip()
+                        st.write(f"🤖 **Gemini Menjawab:** \"{jawaban_ai}\"")
+                        
+                        # Enkripsi & Kirim balik lewat pipa koneksi terotentikasi
+                        jawaban_encoded = enkripsi(jawaban_ai)
+                        conn.set_var("CloudAnswer", jawaban_encoded)
+                        time.sleep(0.5)
+                        conn.set_var("Status", "1")
+                        
+                        st.success("✅ Jawaban sukses dipantulkan!")
+                        
+                except Exception as e_loop:
+                    # Tampilkan eror spesifik di dalam loop jika ada masalah pembacaan
+                    pass
+                    
+                time.sleep(1) # Interval pengecekan awan
+                
         except Exception as e:
-            st.error(f"Gagal login ke Scratch! Periksa apakah Session ID kamu sudah kedaluwarsa: {e}")
-        # Konfigurasi Gemini
-        genai.configure(api_key=GEMINI_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        st.info("Menunggu pertanyaan dari dalam game Scratch...")
-        
-        # Variabel pengunci lokal
-        terakhir_diproses = ""
-        
-        # LOOP UTAMA (Berjalan di latar belakang)
-        while True:
-            try:
-                # Ambil nilai CloudAsk langsung dari server MIT secara realtime
-                nilai_cloud_ask = scratch3.get_var(PROJECT_ID, "CloudAsk")
-                
-                if nilai_cloud_ask and nilai_cloud_ask != "0" and nilai_cloud_ask != terakhir_diproses:
-                    terakhir_diproses = nilai_cloud_ask
-                    
-                    st.write(f"📥 **Tertangkap angka masuk:** `{nilai_cloud_ask}`")
-                    pertanyaan = dekripsi(str(nilai_cloud_ask))
-                    st.write(f"💬 **Pertanyaan Terjemahan:** \"{pertanyaan}\"")
-                    
-                    # Panggil Gemini
-                    response = model.generate_content(
-                        f"Kamu adalah AI proyek Scratch. Jawab singkat maksimal 25 karakter: {pertanyaan}"
-                    )
-                    jawaban_ai = response.text.strip()
-                    st.write(f"🤖 **Gemini Menjawab:** \"{jawaban_ai}\"")
-                    
-                    # Enkripsi & Suntik balik ke Cloud resmi MIT
-                    jawaban_encoded = enkripsi(jawaban_ai)
-                    conn.set_var("CloudAnswer", jawaban_encoded)
-                    time.sleep(0.3)
-                    conn.set_var("Status", "1")
-                    
-                    st.success("✅ Jawaban sukses dipantulkan ke server MIT!")
-                    
-            except Exception as e:
-                st.write(f"⚠️ Ada interupsi data: {e}")
-                
-            time.sleep(1) # Cek setiap 1 detik sekali agar ramah CPU Celeron
+            st.error(f"Gagal mengunci jaringan Scratch: {e}")
