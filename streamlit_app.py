@@ -4,8 +4,8 @@ import google.generativeai as genai
 import time
 
 # --- KONFIGURASI DASHBOARD (Navy Blue Style) ---
-st.set_page_config(page_title="Scratch AI Bridge v8.3", layout="centered")
-st.title("🚀 AI Bridge Dashboard (Live Scanner)")
+st.set_page_config(page_title="Scratch AI Bridge v9.0", layout="centered")
+st.title("🚀 AI Bridge Dashboard (Event Listener Mode)")
 
 GEMINI_KEY = st.text_input("Gemini API Key", type="password")
 PROJECT_ID = "1338403041"
@@ -22,49 +22,57 @@ def dekripsi(data_angka):
                 hasil += kamus[indeks]
     return hasil
 
-if st.button("Jalankan Radar Pemantau Publik"):
+if st.button("Jalankan Radar Jembatan"):
     if not GEMINI_KEY:
         st.error("API Key Gemini wajib diisi, bro!")
     else:
-        st.success("Radar Aktif! Mengunci variabel live proyek...")
+        st.success("Radar Aktif! Menggunakan Jalur Event Listener Resmi ✅")
         
         # Konfigurasi Gemini
         genai.configure(api_key=GEMINI_KEY)
         model = genai.GenerativeModel('gemini-1.5-flash')
         
-        st.info("Menunggu sinyal Status = 2 dari Scratch...")
-        terakhir_diproses = ""
+        st.info("Mendengarkan perubahan variabel awan dari game Scratch...")
         
-        while True:
-            try:
-                # SOLUSI JITU: Langsung tembak nilai variabel aslinya secara live via API publik
-                # Ini sangat ringan, tidak bikin crash, dan instan!
-                nilai_status = str(scratch3.get_var(PROJECT_ID, "Status"))
-                
-                # Jika terdeteksi game mengirimkan sinyal Status 2
-                if nilai_status == "2":
-                    nilai_cloud_ask = str(scratch3.get_var(PROJECT_ID, "CloudAsk"))
+        # Membuat handler event listener publik (Tanpa Login, Super Aman)
+        events = scratch3.CloudEvents(PROJECT_ID)
+        
+        # Variabel penampung sementara di memori Streamlit
+        if "log_ai" not in st.session_state:
+            st.session_state.log_ai = []
+
+        # Fungsi yang otomatis terpicu JIKA ada variabel cloud yang berubah
+        @events.event
+        def on_set(event):
+            # Cek jika ada yang merubah Status menjadi 2
+            if event.name == "☁ Status" and str(event.value) == "2":
+                try:
+                    # Ambil nilai CloudAsk detik itu juga dari data event (Bukan nembak server lagi!)
+                    # Kita cari data CloudAsk pendampingnya
+                    proyek = scratch3.get_project(PROJECT_ID)
+                    nilai_cloud_ask = proyek.get_cloud_variable("CloudAsk")
                     
-                    if nilai_cloud_ask and nilai_cloud_ask != "0" and nilai_cloud_ask != terakhir_diproses:
-                        terakhir_diproses = nilai_cloud_ask
+                    if nilai_cloud_ask and str(nilai_cloud_ask) != "0":
+                        pertanyaan = dekripsi(str(nilai_cloud_ask))
                         
-                        st.write("🎯 **Sinyal Terkunci! Status = 2 Terdeteksi.**")
-                        pertanyaan = dekripsi(nilai_cloud_ask)
-                        st.write(f"💬 **Pertanyaan Player:** \"{pertanyaan}\"")
-                        
-                        # Ambil jawaban dari Gemini
+                        # Panggil Gemini AI
                         response = model.generate_content(
                             f"Kamu adalah AI proyek Scratch. Jawab singkat maksimal 25 karakter: {pertanyaan}"
                         )
                         jawaban_ai = response.text.strip()
                         
-                        st.markdown("---")
-                        st.subheader(f"🤖 JAWABAN GEMINI:")
-                        st.success(f"**{jawaban_ai}**")
-                        st.markdown("---")
-                        
-            except Exception as e:
-                pass
-                
-            # Jeda 1.5 detik sangat aman untuk pembacaan live satu variabel tunggal
-            time.sleep(1.5)
+                        # Simpan log ke layar
+                        st.session_state.log_ai.append(f"📥 Pertanyaan: {pertanyaan} | 🤖 Gemini: {jawaban_ai}")
+                except Exception as err:
+                    pass
+
+        # Jalankan listen secara non-blocking
+        events.start(thread=True)
+        
+        # Tampilkan log di layar Streamlit secara dinamis
+        placeholder = st.empty()
+        while True:
+            with placeholder.container():
+                for log in reversed(st.session_state.log_ai):
+                    st.write(log)
+            time.sleep(1)
